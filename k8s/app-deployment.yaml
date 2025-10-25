@@ -1,0 +1,36 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: conference-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: conference-app
+  template:
+    metadata:
+      labels:
+        app: conference-app
+    spec:
+      containers:
+        - name: conference-app
+          image: conference_room_booking:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: "Host=postgres;Database=conferencebooking;Username=postgres;Password=verystrongpassword"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: conference-app
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 8080
+      nodePort: 30080
+  selector:
+    app: conference-app

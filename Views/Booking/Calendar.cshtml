@@ -1,0 +1,203 @@
+@{
+    ViewData["Title"] = "Kalendarz Rezerwacji";
+}
+
+<h2 class="mt-4 mb-4">Kalendarz Rezerwacji Salek</h2>
+
+<div class="mb-3">
+    <label for="dateSelect" class="form-label">Wybierz datę:</label>
+    <input type="date" class="form-control" id="dateSelect" style="max-width: 200px;">
+</div>
+<div class="card shadow-sm p-4 mb-4">
+    <div id="calendar-container">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead class="table-dark">
+                <tr>
+                    <th style="width: 100px;">Godzina</th>
+                    @foreach (var room in ViewBag.Rooms as List<ConferenceRoomBooking.Models.Room>)
+                    {
+                        <th>@room.Name <br><small>(@room.Capacity miejsc)</small></th>
+                    }
+                </tr>
+                </thead>
+                <tbody id="calendar-body">
+                <!-- Render calendar function -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nowa Rezerwacja</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalMessage" class="alert" style="display:none;"></div>
+                <form id="bookingForm">
+                    <input type="hidden" id="roomId" name="roomId">
+                    <input type="hidden" id="startTime" name="startTime">
+                    <input type="hidden" id="endTime" name="endTime">
+
+                    <div class="mb-3">
+                        <label class="form-label">Salka:</label>
+                        <p id="roomName" class="fw-bold"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data i godzina rozpoczęcia:</label>
+                        <input type="datetime-local" class="form-control" id="startTimeInput" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data i godzina zakończenia:</label>
+                        <input type="datetime-local" class="form-control" id="endTimeInput" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" id="confirmBooking">Zarezerwuj</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const rooms = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Rooms));
+        console.log('rooms', rooms);
+        let currentDate = new Date();
+        currentDate.setUTCHours(0, 0, 0, 0);
+        let bookingsData = [];
+
+        document.getElementById('dateSelect').valueAsDate = currentDate;
+
+        async function loadBookings() {
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const response = await fetch(`/Booking/GetForDay?date=${dateStr}`);
+            bookingsData = await response.json();
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const tbody = document.getElementById('calendar-body');
+            tbody.innerHTML = '';
+
+            for (let hour = 8; hour <= 20; hour++) {
+                const row = document.createElement('tr');
+
+                const timeCell = document.createElement('td');
+                timeCell.textContent = `${hour}:00`;
+                row.appendChild(timeCell);
+
+                rooms.forEach(room => {
+                    const cell = document.createElement('td');
+                    cell.className = 'calendar-cell';
+                    cell.dataset.roomId = room.Id;
+                    cell.dataset.hour = hour;
+
+                    // Look for reservations in specific slots
+                    const cellBookings = bookingsData.filter(b => {
+                        const start = new Date(b.startTime);
+                        const end = new Date(b.endTime);
+                        const cellSlotStart = new Date(currentDate);
+                        cellSlotStart.setHours(hour, 0, 0, 0);
+                        const cellSlotEnd = new Date(currentDate);
+                        cellSlotEnd.setHours(hour + 1, 0, 0, 0);
+                        
+                        return b.roomId === room.Id && (
+                            (start < cellSlotEnd) && (end > cellSlotStart)
+                        );
+                    });
+
+                    // Display reservations
+                    if (cellBookings.length > 0) {
+                        cell.classList.add('has-reservations');
+                        cellBookings.forEach(booking => {
+                            const info = document.createElement('div');
+                            info.className = 'booking-info';
+                            const start = new Date(booking.startTime);
+                            const end = new Date(booking.endTime);
+                            info.textContent = `${start.getHours()}:${String(start.getMinutes()).padStart(2, '0')} - ${end.getHours()}:${String(end.getMinutes()).padStart(2, '0')} | ${booking.userName}`;
+                            cell.appendChild(info);
+                        });
+                    }
+                    
+                    cell.addEventListener('click', () => openBookingModal(room, hour));
+                    row.appendChild(cell);
+                });
+
+                tbody.appendChild(row);
+            }
+        }
+
+        function openBookingModal(room, hour) {
+            document.getElementById('roomId').value = room.Id;
+            document.getElementById('roomName').textContent = room.Name;
+            
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const day = currentDate.getDate();
+
+            const start = new Date(year, month, day, hour, 0, 0, 0);
+            const end = new Date(year, month, day, hour + 1, 0, 0, 0);
+
+            document.getElementById('startTimeInput').value = formatDateTimeLocal(start);
+            document.getElementById('endTimeInput').value = formatDateTimeLocal(end);
+
+            document.getElementById('modalMessage').style.display = 'none';
+
+            const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+            modal.show();
+        }
+
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        document.getElementById('confirmBooking').addEventListener('click', async () => {
+            const roomId = parseInt(document.getElementById('roomId').value);
+            const startTime = document.getElementById('startTimeInput').value;
+            const endTime = document.getElementById('endTimeInput').value;
+
+            const response = await fetch('/Booking/Create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({roomId, startTime, endTime})
+            });
+
+            const result = await response.json();
+            const messageDiv = document.getElementById('modalMessage');
+            messageDiv.style.display = 'block';
+
+            if (result.success) {
+                messageDiv.className = 'alert alert-success';
+                messageDiv.textContent = result.message;
+                setTimeout(() => {
+                    bootstrap.Modal.getInstance(document.getElementById('bookingModal')).hide();
+                    loadBookings();
+                }, 1500);
+            } else {
+                messageDiv.className = 'alert alert-danger';
+                messageDiv.textContent = result.message;
+            }
+        });
+
+        document.getElementById('dateSelect').addEventListener('change', (e) => {
+            currentDate = new Date(e.target.value);
+            loadBookings();
+        });
+
+        loadBookings();
+    </script>
+}

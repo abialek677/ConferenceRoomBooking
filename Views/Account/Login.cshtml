@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Logowanie";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2 class="text-center mb-4">System Rezerwacji Sali Konferencyjnych</h2>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <form method="get" action="@Url.Action("Login", "Account")">
+            <div class="mb-3">
+                <label for="login" class="form-label">Login</label>
+                <input type="text" class="form-control" id="login" name="login" required 
+                       placeholder="Wprowadź swój login">
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Zaloguj się</button>
+        </form>
+        
+        <div class="mt-3 text-center">
+            <a href="@Url.Action("Register","Account")">Nie masz konta? Zarejestruj się</a>
+        </div>
+
+        <hr class="my-4">
+        
+        <div class="text-muted small">
+            <p class="mb-2"><strong>Dostępni użytkownicy (po inicjalizacji):</strong></p>
+            <ul class="mb-2">
+                <li><code>admin</code> - Administrator</li>
+                <li><code>jan.kowalski</code> - Użytkownik</li>
+                <li><code>anna.nowak</code> - Użytkownik</li>
+                <li><code>piotr.wisniewski</code> - Użytkownik</li>
+            </ul>
+            <p class="mb-0">
+                <a href="@Url.Action("Init", "Room")" class="btn btn-sm btn-outline-secondary">
+                    Inicjalizuj dane testowe
+                </a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

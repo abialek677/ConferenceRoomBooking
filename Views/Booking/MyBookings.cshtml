@@ -1,0 +1,58 @@
+@model List<ConferenceRoomBooking.Models.Booking>
+@{
+    ViewData["Title"] = "Moje Rezerwacje";
+}
+
+<h2 class="mt-4 mb-4">Moje Nadchodzące Rezerwacje</h2>
+
+<div class="mb-3">
+    <a href="@Url.Action("ExportMyBookings")" class="btn btn-success">
+        📅 Eksportuj do kalendarza (.ics)
+    </a>
+</div>
+
+@if (Model.Any())
+{
+    <div class="row">
+        @foreach (var booking in Model)
+        {
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">@booking.Room.Name</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">
+                            <strong>Data:</strong> @booking.StartTime.ToString("dd.MM.yyyy")
+                        </p>
+                        <p class="mb-2">
+                            <strong>Godzina:</strong> 
+                            @booking.StartTime.ToString("HH:mm") - @booking.EndTime.ToString("HH:mm")
+                        </p>
+                        <p class="mb-2">
+                            <strong>Czas trwania:</strong> 
+                            @((booking.EndTime - booking.StartTime).TotalMinutes) minut
+                        </p>
+                        <p class="mb-3">
+                            <strong>Pojemność salki:</strong> @booking.Room.Capacity miejsc
+                        </p>
+                        <form method="post" asp-action="Cancel" asp-route-id="@booking.Id"
+                              onsubmit="return confirm('Czy na pewno chcesz anulować tę rezerwację?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Anuluj Rezerwację</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <p class="mb-0">Nie masz żadnych nadchodzących rezerwacji.</p>
+    </div>
+}
+
+<div class="mt-4">
+    <a href="@Url.Action("Calendar")" class="btn btn-primary">← Powrót do kalendarza</a>
+</div>
