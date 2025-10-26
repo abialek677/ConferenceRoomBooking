@@ -36,8 +36,8 @@ namespace ConferenceRoomBooking.Controllers
                 roomId = b.RoomId,
                 roomName = b.Room.Name,
                 userName = b.User.FullName,
-                startTime = b.StartTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                endTime = b.EndTime.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                startTime = b.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                endTime = b.EndTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
                 isOwner = b.UserId.ToString() == User.FindFirstValue(ClaimTypes.NameIdentifier)
             });
 
@@ -63,8 +63,8 @@ namespace ConferenceRoomBooking.Controllers
             {
                 UserId = userId,
                 RoomId = model.RoomId,
-                StartTime = DateTime.SpecifyKind(model.StartTime, DateTimeKind.Local).ToUniversalTime(),
-                EndTime = DateTime.SpecifyKind(model.EndTime, DateTimeKind.Local).ToUniversalTime()
+                StartTime = model.StartTime.ToUniversalTime(),
+                EndTime = model.EndTime.ToUniversalTime()
             };
 
             var result = await repository.CreateBookingAsync(booking);

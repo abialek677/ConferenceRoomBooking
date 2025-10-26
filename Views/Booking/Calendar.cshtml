@@ -167,13 +167,16 @@
             const roomId = parseInt(document.getElementById('roomId').value);
             const startTime = document.getElementById('startTimeInput').value;
             const endTime = document.getElementById('endTimeInput').value;
+            
+            const startTimeUtc = new Date(startTime).toISOString();
+            const endTimeUtc = new Date(endTime).toISOString();
 
             const response = await fetch('/Booking/Create', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({roomId, startTime, endTime})
+                body: JSON.stringify({roomId, startTime: startTimeUtc, endTime: endTimeUtc})
             });
 
             const result = await response.json();
