@@ -103,25 +103,38 @@ namespace ConferenceRoomBooking.Controllers
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var bookings = await repository.GetUserBookingsAsync(userId);
 
+            if (bookings == null || bookings.Count == 0)
+            {
+                TempData["Error"] = "Brak nadchodzących rezerwacji do eksportu.";
+                return RedirectToAction("MyBookings");
+            }
+
             var calendar = new Calendar();
             calendar.AddProperty("PRODID", "-//Conference Room Booking//EN");
             calendar.AddProperty("VERSION", "2.0");
 
             foreach (var booking in bookings)
             {
+                var roomName = booking.Room?.Name ?? "Sala";
+                var roomCapacity = booking.Room?.Capacity ?? 0;
+                var organizerName = booking.User?.FullName ?? User.Identity?.Name ?? "Użytkownik";
+                
+                var startUtc = DateTime.SpecifyKind(booking.StartTime, DateTimeKind.Utc);
+                var endUtc = DateTime.SpecifyKind(booking.EndTime, DateTimeKind.Utc);
+
                 var calEvent = new CalendarEvent
                 {
-                    Summary = $"Rezerwacja: {booking.Room.Name}",
-                    Description = $"Salka: {booking.Room.Name} (pojemność: {booking.Room.Capacity})",
-                    Start = new CalDateTime(booking.StartTime),
-                    End = new CalDateTime(booking.EndTime),
-                    Location = booking.Room.Name,
+                    Summary = $"Rezerwacja: {roomName}",
+                    Description = $"Salka: {roomName} (pojemność: {roomCapacity})",
+                    Start = new CalDateTime(startUtc) { TzId = "UTC" },
+                    End = new CalDateTime(endUtc) { TzId = "UTC" },
+                    Location = roomName,
                     Uid = $"booking-{booking.Id}@conferenceroombooking.local"
                 };
 
                 calEvent.Organizer = new Organizer
                 {
-                    CommonName = booking.User.FullName
+                    CommonName = organizerName
                 };
 
                 calendar.Events.Add(calEvent);
@@ -130,8 +143,8 @@ namespace ConferenceRoomBooking.Controllers
             var serializer = new CalendarSerializer();
             var icsContent = serializer.SerializeToString(calendar);
             var bytes = Encoding.UTF8.GetBytes(icsContent);
-
-            return File(bytes, "text/calendar", $"moje-rezerwacje-{DateTime.Now:yyyyMMdd}.ics");
+            
+            return File(bytes, "text/calendar; charset=utf-8", $"moje-rezerwacje-{DateTime.UtcNow:yyyyMMdd}.ics");
         }
     }
 }

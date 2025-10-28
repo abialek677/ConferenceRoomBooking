@@ -34,7 +34,7 @@
                             @((booking.EndTime - booking.StartTime).TotalMinutes) minut
                         </p>
                         <p class="mb-3">
-                            <strong>Pojemność salki:</strong> @booking.Room.Capacity miejsc
+                            <strong>Pojemność sali:</strong> @booking.Room.Capacity miejsc
                         </p>
                         <form method="post" asp-action="Cancel" asp-route-id="@booking.Id"
                               onsubmit="return confirm('Czy na pewno chcesz anulować tę rezerwację?');">

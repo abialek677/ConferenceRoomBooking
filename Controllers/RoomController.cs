@@ -69,7 +69,6 @@ namespace ConferenceRoomBooking.Controllers
         }
 
         [HttpGet]
-        [AllowAnonymous]
         public async Task<IActionResult> Init()
         {
             context.Bookings.RemoveRange(context.Bookings);
@@ -100,7 +99,11 @@ namespace ConferenceRoomBooking.Controllers
             await context.SaveChangesAsync();
 
             TempData["Success"] = "Dane inicjalizacyjne zostały utworzone. Użytkownicy: admin, jan.kowalski, anna.nowak, piotr.wisniewski";
-            return RedirectToAction("Login", "Account");
+            var viewModel = new RoomManageViewModel
+            {
+                Rooms = await context.Rooms.OrderBy(r => r.Name).ToListAsync()
+            };
+            return View("Manage", viewModel);
         }
     }
 }

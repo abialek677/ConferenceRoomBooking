@@ -67,6 +67,7 @@ namespace ConferenceRoomBooking.Data
 
             return await context.Bookings
                 .Include(b => b.Room)
+                .Include(b => b.User)
                 .Where(b => b.UserId == userId && b.StartTime >= DateTime.UtcNow)
                 .OrderBy(b => b.StartTime)
                 .ToListAsync();
